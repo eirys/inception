@@ -1,0 +1,61 @@
+version: '3'
+
+services:
+  mariadb:
+    build: ./requirements/mariadb
+    image: mariadb:42
+    container_name: mariadb42
+    networks:
+      - etran42inception
+    env_file:
+      - .env
+    volumes:
+      - mariadb_volume:/var/lib/mysql:rw
+    restart: always
+
+  wordpress:
+    build: ./requirements/wordpress
+    image: wordpress:42
+    container_name: wordpress42
+    volumes:
+      - wordpress_volume:/home/public_html:rw
+    networks:
+      - etran42inception
+    env_file:
+      - .env
+    depends_on:
+      - mariadb
+    restart: always
+
+  nginx:
+    build: ./requirements/nginx
+    image: nginx:42
+    container_name: nginx42
+    ports:
+      - 443:443
+    networks:
+      - etran42inception
+    volumes:
+      - wordpress_volume:/home/public_html:ro
+    depends_on:
+      - wordpress
+    restart: always
+
+networks:
+  etran42inception:
+
+# I did 2 volumes to avoid all the files to
+# get mixed up in one single directory.
+volumes:
+  mariadb_volume:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/home/etran/data/mariadb'
+  wordpress_volume:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/home/etran/data/wordpress'
